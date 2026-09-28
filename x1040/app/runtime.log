@@ -1,0 +1,4 @@
+This file is created by the app to capture runtime debug output.
+
+Use the app log file when troubleshooting:
+  ~/.rollo-printer/runtime.log

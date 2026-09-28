@@ -1,0 +1,13 @@
+[Unit]
+Description=Rollo printer copy helper
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.venvs/rollo-copies/bin/python %h/apps/rollo-copies/app/main.py
+Restart=on-failure
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
+
+[Install]
+WantedBy=default.target
