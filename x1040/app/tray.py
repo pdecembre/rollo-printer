@@ -1,99 +1,94 @@
+"""Optional system-tray surface.
+
+This is a convenience layer only. GNOME (and therefore Zorin) has no
+built-in system tray -- Qt needs the AppIndicator extension to provide
+org.kde.StatusNotifierWatcher -- so the app must remain fully usable when
+this class is never constructed. All real work lives in the main window.
+"""
+
 from __future__ import annotations
+
+import logging
 
 from PySide6 import QtGui, QtWidgets
 
-from app.cups_helper import PRINTER_NAME, current_copies, reset_to_default, set_copies
+from app.icon import APP_NAME, app_icon
+
+logger = logging.getLogger("rollo_printer")
 
 
 class TrayApp(QtWidgets.QSystemTrayIcon):
-    def __init__(self, app: QtWidgets.QApplication):
+    def __init__(self, app: QtWidgets.QApplication, window):
         super().__init__(self._make_icon())
         self.app = app
+        self.window = window
+        self._printer = None
+        self._value = None
         self._menu = QtWidgets.QMenu()
-        self._current_value = current_copies() or 1
-        self._setup_menu()
         self.setContextMenu(self._menu)
         self.activated.connect(self._on_activated)
-        self._update_status_text()
+        self._build_menu()
 
     @staticmethod
     def _make_icon() -> QtGui.QIcon:
-        pixmap = QtGui.QPixmap(32, 32)
-        pixmap.fill(QtGui.QColor("#2d7ff9"))
-        painter = QtGui.QPainter(pixmap)
-        painter.setPen(QtGui.QPen(QtGui.QColor("white"), 2))
-        painter.drawRect(8, 8, 16, 16)
-        painter.drawLine(8, 16, 24, 16)
-        painter.end()
-        return QtGui.QIcon(pixmap)
+        return app_icon()
 
-    def _refresh_current_value(self):
-        value = current_copies()
-        if value is not None:
-            self._current_value = value
-        self._update_status_text()
-        self._setup_menu()
+    def sync(self, printer, value):
+        """Called by the window whenever the printer or copy count changes."""
+        if (printer, value) == (self._printer, self._value):
+            return
+        self._printer = printer
+        self._value = value
+        shown = value if value is not None else "unknown"
+        self.setToolTip(f"{APP_NAME}\nPrinter: {printer}\nPages to print: {shown}")
+        self._build_menu()
 
-    def _update_status_text(self):
-        self.setToolTip(f"Rollo printer helper\nPrinter: {PRINTER_NAME}\nCurrent copies: {self._current_value}")
-
-    def _setup_menu(self):
+    def _build_menu(self):
         self._menu.clear()
 
-        status_action = self._menu.addAction(f"Status: {self._current_value} copies")
-        status_action.setEnabled(False)
+        shown = self._value if self._value is not None else "unknown"
+        status = self._menu.addAction(f"Currently printing {shown} page(s)")
+        status.setEnabled(False)
 
-        refresh_action = self._menu.addAction("Refresh current value")
-        refresh_action.triggered.connect(self._refresh_current_value)
+        open_action = self._menu.addAction(f"Open {APP_NAME}")
+        open_action.triggered.connect(self._show_window)
+        self._menu.setDefaultAction(open_action)
 
         self._menu.addSeparator()
-
-        for value in [1, 2, 3, 4, 5, 10]:
+        for value in (1, 2, 3, 4, 5, 10):
             action = self._menu.addAction(f"# of pages to print: {value}")
-            action.triggered.connect(lambda checked=False, v=value: self._set_copies(v))
+            action.triggered.connect(lambda _checked=False, v=value: self.window.apply_copies(v))
+
+        custom = self._menu.addAction("# of pages to print...")
+        custom.triggered.connect(self._prompt_for_custom_value)
 
         self._menu.addSeparator()
-
-        custom_action = self._menu.addAction("# of pages to print")
-        custom_action.triggered.connect(self._prompt_for_custom_value)
-
-        self._menu.addSeparator()
-
-        reset_action = self._menu.addAction("Reset to 1")
-        reset_action.triggered.connect(self._reset_to_default)
+        reset = self._menu.addAction("Reset to 1")
+        reset.triggered.connect(lambda: self.window.apply_copies(1))
 
         self._menu.addSeparator()
         quit_action = self._menu.addAction("Quit")
-        quit_action.triggered.connect(self.app.quit)
+        quit_action.triggered.connect(self._quit)
 
-    def _set_copies(self, value: int):
-        if set_copies(value):
-            self._current_value = value
-            self._update_status_text()
-            self._setup_menu()
-
-    def _reset_to_default(self):
-        if reset_to_default():
-            self._current_value = 1
-            self._update_status_text()
-            self._setup_menu()
+    def _show_window(self):
+        self.window.show()
+        self.window.raise_()
+        self.window.activateWindow()
 
     def _prompt_for_custom_value(self):
         value, ok = QtWidgets.QInputDialog.getInt(
-            None,
-            "# of pages to print",
-            "Enter number of copies:",
-            self._current_value,
-            1,
-            100,
-            1,
+            self.window, "# of pages to print", "Enter number of copies:", self._value or 1, 1, 999, 1
         )
         if ok:
-            self._set_copies(value)
+            self.window.apply_copies(value)
 
     def _on_activated(self, reason):
         if reason == QtWidgets.QSystemTrayIcon.Trigger:
-            self._menu.popup(QtGui.QCursor.pos())
+            if self.window.isVisible():
+                self.window.hide()
+            else:
+                self._show_window()
 
-    def show(self):
-        super().show()
+    def _quit(self):
+        logger.info("Quit requested from the tray menu")
+        self.window.quit_app()

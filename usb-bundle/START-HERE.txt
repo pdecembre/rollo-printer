@@ -1,0 +1,103 @@
+=====================================================================
+ ROLLO PAGE COUNT  -  printer helper for the Rollo X1040 USB printer
+=====================================================================
+
+This sets how many copies the Rollo printer makes, because the normal
+print window does not control it correctly.
+
+
+---------------------------------------------------------------------
+ 1. INSTALL IT
+---------------------------------------------------------------------
+
+  a. Plug this USB drive into the laptop.
+  b. Open the Files app, click this drive, open the "rollo-x1040"
+     folder.
+  c. Right-click on empty space inside that folder and choose
+     "Open in Terminal".
+  d. Type this line exactly, then press Enter:
+
+         bash INSTALL.sh
+
+  e. It asks for the login password. Nothing appears on the screen
+     while you type - that is normal. Type it and press Enter.
+
+  It first prints "Copying it to local disk first". That is expected
+  and correct - Linux does not allow programs to run directly from a
+  USB drive, so the installer copies itself onto the laptop.
+
+  It takes a few minutes, mostly downloading. Wait until it prints:
+
+         #  INSTALL: OK  #
+
+
+  IT MUST START WITH THE WORD "bash"
+  Double-clicking INSTALL.sh will NOT work, and neither will typing
+  ./INSTALL.sh . Both give "Permission denied". That is a limitation
+  of USB drives, not a fault in the installer.
+
+
+---------------------------------------------------------------------
+ 2. OPEN IT
+---------------------------------------------------------------------
+
+  Press the Super key (the Windows key), type "Rollo", and click
+  "Rollo Page Count".
+
+  There is also an icon on the Desktop. If it asks whether to trust
+  the file, choose "Trust and Launch".
+
+  It also starts by itself each time the laptop is switched on.
+
+
+---------------------------------------------------------------------
+ 3. USE IT
+---------------------------------------------------------------------
+
+  1. Open "Rollo Page Count".
+  2. Click how many pages you want: 1, 2, 3, 4, 5 or 10.
+     For any other number, type it in the box and press "Set".
+  3. Print normally from whatever program you are using.
+  4. When printing finishes, the app puts the printer back to 1 page
+     by itself. Nothing to remember.
+
+  If it cannot find the printer, it says so and lists the printers it
+  can see. Pick the Rollo one and press "Use this printer".
+
+
+  THE CLOSE BUTTON
+  "Close" hides the window but the app keeps running in the
+  background, so it still resets the page count after printing.
+  To open it again, click the printer icon in the system tray, or
+  open "Rollo Page Count" from the menu again.
+
+  "Quit" stops the app completely.
+
+
+---------------------------------------------------------------------
+ 4. IF SOMETHING IS WRONG
+---------------------------------------------------------------------
+
+  Open a terminal in the "rollo-x1040" folder on this drive, the same
+  way as in step 1, and run:
+
+         bash DIAGNOSE.sh
+
+  It changes nothing. It writes a full report onto this USB drive,
+  into the "rollo-logs" folder at the top level of the drive.
+
+  Then eject the drive and bring it back. That folder contains
+  everything needed to work out what went wrong.
+
+
+---------------------------------------------------------------------
+ 5. IMPORTANT - EJECTING
+---------------------------------------------------------------------
+
+  Always eject the drive properly before unplugging it:
+  right-click the drive in Files and choose "Eject", or click the
+  eject arrow next to its name.
+
+  If you pull it out without ejecting, the log files may be lost.
+
+=====================================================================

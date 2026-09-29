@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Rollo Printer Copies
-Comment=Set the default number of pages to print for the Rollo X1040 USB printer
-Exec=${HOME}/.venvs/rollo-copies/bin/python ${HOME}/apps/rollo-copies/app/main.py
-Icon=printer
-Terminal=false
-X-GNOME-Autostart-enabled=true
